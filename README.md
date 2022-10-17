@@ -1,6 +1,8 @@
 # MPB-UCB
 Source code for NeurIPS 2022 paper Product Ranking for Revenue Maximization with Multiple Purchases.
 
+In this paper, we propose a more realistic consumer choice model to characterize consumer behaviors under multiple-purchase settings. We further develop the Multiple-Purchase-with-Budget UCB (MPB-UCB) algorithms with $\tilde{O}(\sqrt{T})$ regret that estimate consumers' behaviors and maximize revenue simultaneously in online settings.
+
 ## Installation
 ```bash
 pip install -r requirements.txt
@@ -16,7 +18,7 @@ python main_non_contextual.py --method Optimal --num-prod 50 --num-consumer 1000
 ```bash
 python main_non_contextual.py --method Ours --num-prod 50 --num-consumer 100000 -q 0.9 -s 0.5 --lmbd-upper 0.3 --seed-parameter 666
 ```
-Use `python main_non_contextual.py -h` to show all arguments for all baselines. The experiments are run for 5 times with different seeds.
+Use `python main_non_contextual.py -h` to show all arguments for all baselines. The experiments are run 5 times with different seeds.
 
 ### Step 3: Plot the result
 ```bash
