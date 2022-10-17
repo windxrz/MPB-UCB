@@ -44,7 +44,7 @@ def parse_args():
         default="Ours",
     )
 
-    parser.add_argument("--delta", type=float, default=0.5)
+    parser.add_argument("--delta", type=float, default=1.0)
     parser.add_argument("--alpha", type=float, default=1.0)
     parser.add_argument("--xiq", type=float, default=0.2)
     parser.add_argument("--xiw", type=float, default=0.05)
