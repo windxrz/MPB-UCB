@@ -1,0 +1,26 @@
+search_space:
+  xiq:
+    _type: choice
+    _value: [ 0.05, 0.1, 0.2 ]
+
+  xiw:
+    _type: choice
+    _value: [ 0.05, 0.1, 0.2 ]
+
+  xilmbd:
+    _type: choice
+    _value: [ 0.1, 0.3, 0.5 ]
+
+trial_command: python main_non_contextual.py --nni --method Ours --num-prod 50 -s 0.5
+trial_code_directory: ..
+
+trial_concurrency: 5
+max_trial_number: 27
+
+tuner:
+  name: TPE
+  class_args:
+    optimize_mode: maximize
+
+training_service:
+  platform: local

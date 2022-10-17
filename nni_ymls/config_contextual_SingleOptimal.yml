@@ -1,0 +1,23 @@
+search_space:
+  num_prod:
+    _type: choice
+    _value: [ 50, 300 ]
+  
+  s:
+    _type: choice
+    _value: [ 0.5, 0.8 ]
+
+
+trial_command: python main_contextual.py --nni --method SingleOptimal
+trial_code_directory: ..
+
+trial_concurrency: 4
+max_trial_number: 4
+
+tuner:
+  name: TPE
+  class_args:
+    optimize_mode: maximize
+
+training_service:
+  platform: local
