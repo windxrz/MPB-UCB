@@ -22,7 +22,7 @@ from model.non_contextual_method import (
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--num-prod", type=int, default=300)
-    parser.add_argument("--num-customer", type=int, default=100000)
+    parser.add_argument("--num-consumer", type=int, default=100000)
     parser.add_argument("-q", type=float, default=0.9)
     parser.add_argument("-s", type=float, default=0.5)
     parser.add_argument("--lmbd-upper", type=float, default=0.3)
@@ -43,8 +43,8 @@ def parse_args():
         default="Ours",
     )
 
-    parser.add_argument("--delta", type=float, default=5.0)
-    parser.add_argument("--xiq", type=float, default=0.1)
+    parser.add_argument("--delta", type=float, default=2.0)
+    parser.add_argument("--xiq", type=float, default=0.2)
     parser.add_argument("--xiw", type=float, default=0.1)
     parser.add_argument("--xilmbd", type=float, default=0.1)
 
@@ -72,9 +72,9 @@ def main():
     print(args)
 
     setting = (
-        "num_prod_{}_num_customer_{}_q_{}_s_{}_lmbd_upper_{}_seed_parameter_{}".format(
+        "num_prod_{}_num_consumer_{}_q_{}_s_{}_lmbd_upper_{}_seed_parameter_{}".format(
             args.num_prod,
-            args.num_customer,
+            args.num_consumer,
             args.q,
             args.s,
             args.lmbd_upper,
@@ -110,21 +110,21 @@ def main():
 
     ans_revenue = []
 
-    for seed_customer in range(1 if "Optimal" in args.method else 5):
-        filename = os.path.join(output_path, "{}.json".format(seed_customer))
+    for seed_consumer in range(1 if "Optimal" in args.method else 5):
+        filename = os.path.join(output_path, "{}.json".format(seed_consumer))
         if not os.path.exists(filename):
             non_contextual_loop = NonContextualLoop(
                 args.num_prod, args.q, args.s, args.lmbd_upper, args.seed_parameter
             )
 
-            optimal = Optimal(args.num_prod, args.num_customer, non_contextual_loop)
+            optimal = Optimal(args.num_prod, args.num_consumer, non_contextual_loop)
             optimal_ranking = optimal.policy(1)
             revenue_optimal = non_contextual_loop.expected_revenue(optimal_ranking)
 
             if args.method == "Ours":
                 method = Ours(
                     args.num_prod,
-                    args.num_customer,
+                    args.num_consumer,
                     non_contextual_loop,
                     args.xiq,
                     args.xiw,
@@ -133,7 +133,7 @@ def main():
             elif args.method == "KeepViewing":
                 method = KeepViewing(
                     args.num_prod,
-                    args.num_customer,
+                    args.num_consumer,
                     non_contextual_loop,
                     args.xiq,
                     args.xilmbd,
@@ -141,37 +141,37 @@ def main():
             elif args.method == "SinglePurchase":
                 method = SinglePurchase(
                     args.num_prod,
-                    args.num_customer,
+                    args.num_consumer,
                     non_contextual_loop,
                     args.xiq,
                     args.xilmbd,
                 )
             elif args.method == "ExploreThenExploitA":
                 method = ExploreThenExploitA(
-                    args.num_prod, args.num_customer, non_contextual_loop, args.delta
+                    args.num_prod, args.num_consumer, non_contextual_loop, args.delta
                 )
             elif args.method == "ExploreThenExploitB":
                 method = ExploreThenExploitB(
-                    args.num_prod, args.num_customer, non_contextual_loop, args.delta
+                    args.num_prod, args.num_consumer, non_contextual_loop, args.delta
                 )
             elif args.method == "Optimal":
-                method = Optimal(args.num_prod, args.num_customer, non_contextual_loop)
+                method = Optimal(args.num_prod, args.num_consumer, non_contextual_loop)
             elif args.method == "SingleOptimal":
                 method = SingleOptimal(
-                    args.num_prod, args.num_customer, non_contextual_loop
+                    args.num_prod, args.num_consumer, non_contextual_loop
                 )
             elif args.method == "KeepOptimal":
                 method = KeepOptimal(
-                    args.num_prod, args.num_customer, non_contextual_loop
+                    args.num_prod, args.num_consumer, non_contextual_loop
                 )
 
-            np.random.seed(seed_customer)
+            np.random.seed(seed_consumer)
             revenues = []
-            for t in tqdm(range(args.num_customer)):
+            for t in tqdm(range(args.num_consumer)):
                 ranking = method.policy(t + 1)
                 revenue = non_contextual_loop.expected_revenue(ranking)
                 revenues.append(revenue)
-                browser_list, purchase_list = non_contextual_loop.customer_step(ranking)
+                browser_list, purchase_list = non_contextual_loop.consumer_step(ranking)
                 method.feedback(browser_list, purchase_list)
 
             ans = {

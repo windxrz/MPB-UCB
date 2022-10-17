@@ -1,3 +1,4 @@
+import argparse
 import copy
 import json
 import os
@@ -11,44 +12,32 @@ from tqdm import tqdm
 
 rc("font", **{"family": "sans-serif", "sans-serif": ["Times New Roman"]})
 
-rc("text", usetex=True)
-
 matplotlib.use("Agg")
 matplotlib.rcParams["pdf.fonttype"] = 42
 
-linewidth = 3
-markeredgewidth = 2
-ms = 20
-fontsize = 25
-legend_fontsize = 20
-label_fontsize = 25
+LINEWIDTH = 3
+MARKEREDGEWIDTH = 2
+MS = 20
+FONTSIZE = 25
+LEGEND_FONTSIZE = 20
+LABEL_FONTSIZE = 25
 
 COLOR_LIST = [
-    "#C9625E",
     "#CBBD62",
     "#8ECB62",
     "#62CBC7",
     "#CD6ACA",
+    "#C9625E",
     "#000000",
     "#AAAAAA",
 ]
 MODEL_LIST = [
-    "Ours",
     "SinglePurchase",
     "KeepViewing",
     "ExploreThenExploitA",
     "ExploreThenExploitB",
+    "Ours",
 ]
-
-
-def load_yaml(filename):
-    with open(filename) as f:
-        hyperparams = yaml.safe_load(f)
-        f.close()
-    return hyperparams
-
-
-PLOT_RANGE = load_yaml("plot_range.yml")
 
 
 def select_hyper(model_path, step=100):
@@ -104,7 +93,7 @@ def plot(
     seed_parameter,
     q,
     s,
-    num_customer,
+    num_consumer,
     num_prod,
     lmbd_upper,
     ax,
@@ -114,7 +103,7 @@ def plot(
         "seed_parameter_{}".format(seed_parameter),
         "q_{}".format(q),
         "s_{}".format(s),
-        "num_customer_{}".format(num_customer),
+        "num_consumer_{}".format(num_consumer),
         "num_prod_{}".format(num_prod),
         "lmbd_upper_{}".format(lmbd_upper),
     ]
@@ -152,18 +141,19 @@ def plot(
         if not os.path.exists(method_path):
             continue
         revenue_list, hyperparams = select_hyper(method_path, step)
-        for k in range(5):
+        n_method = len(revenue_list)
+        for k in range(n_method):
             revenue_list[k] = np.array(revenue_list[k])
         if type == "regret":
-            for k in range(5):
+            for k in range(n_method):
                 revenue_list[k] = bests - revenue_list[k]
-        elif type == "revenue":
-            for k in range(5):
+        elif type == "average revenue":
+            for k in range(n_method):
                 revenue_list[k] = revenue_list[k] / np.arange(
                     1, revenue_list[k].shape[0] * step + 1, step
                 )
-        elif type == "ratio":
-            for k in range(5):
+        elif type == "revenue ratio":
+            for k in range(n_method):
                 revenue_list[k] = revenue_list[k] / bests
 
         if len(revenue_list) > 0:
@@ -175,123 +165,94 @@ def plot(
             label = label.replace("KeepViewing", "Keep Viewing")
             label = label.replace("ExploreThenExploitA", "Explore Then Exploit A")
             label = label.replace("ExploreThenExploitB", "Explore Then Exploit B")
+            label = label.replace("Ours", "MPB-UCB (Ours)")
 
             linestyle = "-" if "Ours" in label else "--"
             ax.plot(
-                range(0, num_customer, step),
+                range(0, num_consumer, step),
                 mean,
                 label=label,
                 color=COLOR_LIST[i],
                 linestyle=linestyle,
-                linewidth=linewidth,
+                linewidth=LINEWIDTH,
             )
             ax.fill_between(
-                range(0, num_customer, step),
+                range(0, num_consumer, step),
                 mean - std,
                 mean + std,
                 color=COLOR_LIST[i],
                 alpha=0.1,
             )
 
-            if (
-                setting in PLOT_RANGE
-                and params_setting in PLOT_RANGE[setting]
-                and type in PLOT_RANGE[setting][params_setting]
-            ):
-                ymin = PLOT_RANGE[setting][params_setting][type][0]
-                ymax = PLOT_RANGE[setting][params_setting][type][1]
-                delta = (ymax - ymin) / 20
-                ax.set_ylim(ymin - delta, ymax + delta)
+            if type == "revenue ratio":
+                ax.set_ylim(0.948, 1.002)
 
-    ax.set_title(
-        "$N = {}$, $s{}={}$".format(
-            num_prod,
-            r"_{\max}" if "non" not in setting else "",
-            s,
-        ),
-        fontsize=fontsize,
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--setting",
+        type=str,
+        choices=["contextual", "non_contextual"],
+        default="non_contextual",
     )
-    # ax.set_ylabel("Regret")
+    parser.add_argument("--num-prod", type=int, default=50)
+    parser.add_argument("--num-consumer", type=int, default=100000)
+    parser.add_argument("-q", type=float, default=0.9)
+    parser.add_argument("-s", type=float, default=0.5)
+    parser.add_argument("--lmbd-upper", type=float, default=0.3)
+    parser.add_argument("--seed-parameter", type=int, default=666)
 
-
-def plot_non_contextual(axes, num_prod, type, q):
-    seed_parameter = 666
-    num_customer = 100000
-    lmbd_upper = 0.3
-    for idx, s in enumerate([0.5, 0.8]):
-        setting = "non_contextual"
-        plot(
-            setting,
-            seed_parameter,
-            q,
-            s,
-            num_customer,
-            num_prod,
-            lmbd_upper,
-            axes[idx],
-            type,
-        )
-
-
-def plot_contextual(axes, num_prod, type, q):
-    seed_parameter = 666
-    num_customer = 100000
-    lmbd_upper = 0.3
-    for idx, s in enumerate([0.5, 0.8]):
-        setting = "contextual"
-        plot(
-            setting,
-            seed_parameter,
-            q,
-            s,
-            num_customer,
-            num_prod,
-            lmbd_upper,
-            axes[idx],
-            type,
-        )
-
-
-def plot_all(type, q):
-    print("Plotting {}".format(type))
-    fig, axes = plt.subplots(2, 4, figsize=(17, 6.5))
-    plot_non_contextual(axes[0, :2], 50, type, q)
-    plot_non_contextual(axes[0, 2:], 300, type, q)
-    plot_contextual(axes[1, :2], 50, type, q)
-    plot_contextual(axes[1, 2:], 300, type, q)
-    axes[0, 0].set_ylabel("Non-contextual", fontsize=fontsize)
-    axes[1, 0].set_ylabel("Contextual", fontsize=fontsize)
-    lines, labels = axes[0, 0].get_legend_handles_labels()
-    if type == "regret":
-        ytext = "Regret"
-    elif type == "revenue":
-        ytext = "Average revenue"
-    elif type == "ratio":
-        ytext = "Revenue ratio"
-    fig.text(
-        -0.03, 0.5, ytext, va="center", rotation="vertical", fontsize=fontsize * 1.2
-    )
-    fig.text(0.5, -0.04, r"\# of customers", ha="center", fontsize=fontsize * 1.2)
-    fig.legend(
-        lines,
-        labels,
-        prop={"size": legend_fontsize},
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.17),
-        ncol=5,
-    )
-    plt.tight_layout()
-    plt.savefig("figs/all_{}_q_{}.png".format(type, q), bbox_inches="tight")
-    plt.savefig("figs/all_{}_q_{}.pdf".format(type, q), bbox_inches="tight")
+    args = parser.parse_args()
+    return args
 
 
 def main():
+    args = parse_args()
+    setting = args.setting
+    params = (
+        "num_prod_{}_num_consumer_{}_q_{}_s_{}_lmbd_upper_{}_seed_parameter_{}".format(
+            args.num_prod,
+            args.num_consumer,
+            args.q,
+            args.s,
+            args.lmbd_upper,
+            args.seed_parameter,
+        )
+    )
     if not os.path.exists("figs"):
         os.mkdir("figs")
-    for q in [0.9]:
-        plot_all("regret", q)
-        plot_all("revenue", q)
-        plot_all("ratio", q)
+    print(setting, params)
+    output_path = os.path.join("results", setting, params)
+    if not os.path.exists(output_path):
+        print("No results in this setting!")
+        exit()
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    for i, type in enumerate(["regret", "average revenue", "revenue ratio"]):
+        plot(
+            setting,
+            args.seed_parameter,
+            args.q,
+            args.s,
+            args.num_consumer,
+            args.num_prod,
+            args.lmbd_upper,
+            axes[i],
+            type,
+        )
+        axes[i].set_title(type.capitalize(), fontsize=FONTSIZE)
+    fig.text(0.5, -0.04, r"# of consumers", ha="center", fontsize=FONTSIZE * 1.2)
+    lines, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        lines,
+        labels,
+        prop={"size": LEGEND_FONTSIZE},
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.19),
+        ncol=5,
+    )
+    fig.tight_layout()
+    plt.savefig("figs/{}_{}.png".format(setting, params), bbox_inches="tight")
 
 
 if __name__ == "__main__":

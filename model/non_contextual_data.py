@@ -12,10 +12,10 @@ class NonContextualLoop:
         self.reward = np.random.rand(product_num)
         self.product_num = product_num
 
-    def customer_step(self, ranking):
+    def consumer_step(self, ranking):
         """
-        one step run for each customer
-        :return: a list of product purchased or not for a given customer
+        one step run for each consumer
+        :return: a list of product purchased or not for a given consumer
                 a list of browse or not
         """
 

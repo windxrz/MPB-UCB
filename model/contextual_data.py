@@ -8,7 +8,7 @@ class ContextualLoop:
     def __init__(
         self,
         product_num,
-        customer_num,
+        consumer_num,
         q_upper,
         s_upper,
         lmbd_upper,
@@ -22,22 +22,22 @@ class ContextualLoop:
         self.product_feat = torch.rand(product_num, dim_feature).to(device) / np.sqrt(
             dim_feature
         )
-        self.customer_feat = (
-            0.8 + 0.2 * torch.rand(customer_num, dim_feature).to(device)
+        self.consumer_feat = (
+            0.8 + 0.2 * torch.rand(consumer_num, dim_feature).to(device)
         ) / np.sqrt(dim_feature)
 
-        self.dim_customer = dim_feature
+        self.dim_consumer = dim_feature
         self.dim_prod = dim_feature
 
         self.beta_q = torch.rand(dim_feature).to(device)
         self.beta_s = torch.rand(dim_feature).to(device)
         self.beta_lambda_product = torch.rand(dim_feature).to(device)
-        self.beta_lambda_customer = torch.rand(dim_feature).to(device)
+        self.beta_lambda_consumer = torch.rand(dim_feature).to(device)
 
         self.reward = torch.rand(product_num).to(device)
 
-        self.qs = torch.matmul(self.customer_feat, self.beta_q)
-        self.ss = torch.matmul(self.customer_feat, self.beta_s)
+        self.qs = torch.matmul(self.consumer_feat, self.beta_q)
+        self.ss = torch.matmul(self.consumer_feat, self.beta_s)
 
         delta_q = q_upper / self.qs.max()
         self.qs = self.qs * delta_q
@@ -48,25 +48,25 @@ class ContextualLoop:
         self.beta_s = self.beta_s * delta_s
 
         self.lambda_product = torch.matmul(self.product_feat, self.beta_lambda_product)
-        self.lambda_customer = torch.matmul(
-            self.customer_feat, self.beta_lambda_customer
+        self.lambda_consumer = torch.matmul(
+            self.consumer_feat, self.beta_lambda_consumer
         )
 
         delta_lmbd = lmbd_upper / (
-            self.lambda_customer.max() + self.lambda_product.max()
+            self.lambda_consumer.max() + self.lambda_product.max()
         )
-        self.lambda_customer = self.lambda_customer * delta_lmbd
+        self.lambda_consumer = self.lambda_consumer * delta_lmbd
         self.lambda_product = self.lambda_product * delta_lmbd
         self.beta_lambda_product = self.beta_lambda_product * delta_lmbd
-        self.beta_lambda_customer = self.beta_lambda_customer * delta_lmbd
+        self.beta_lambda_consumer = self.beta_lambda_consumer * delta_lmbd
 
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
 
-    def customer_step(self, ranking, t):
+    def consumer_step(self, ranking, t):
         q = self.qs[t]
         s = self.ss[t]
-        lmbd = self.lambda_customer[t] + self.lambda_product
+        lmbd = self.lambda_consumer[t] + self.lambda_product
         lmbd = lmbd.cpu()
 
         browser_list = []
@@ -87,7 +87,7 @@ class ContextualLoop:
     def expected_revenue(self, ranking, t):
         q = self.qs[t]
         s = self.ss[t]
-        lmbd = self.lambda_customer[t] + self.lambda_product
+        lmbd = self.lambda_consumer[t] + self.lambda_product
         lmbd = lmbd[ranking]
         reward = self.reward[ranking]
         ps = torch.exp(torch.cumsum(torch.log(lmbd * q * s + (1 - lmbd) * q), dim=0))

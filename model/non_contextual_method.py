@@ -10,10 +10,10 @@ def rank_products(lmbd, r, q, s):
 
 
 class Optimal:
-    def __init__(self, product_num: int, customer_num: int, loop: NonContextualLoop):
+    def __init__(self, product_num: int, consumer_num: int, loop: NonContextualLoop):
         self.name = "Optimal"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
         self.lmbd = loop.true_lambda
         self.q = loop.true_qt
@@ -28,10 +28,10 @@ class Optimal:
 
 
 class SingleOptimal:
-    def __init__(self, product_num: int, customer_num: int, loop: NonContextualLoop):
+    def __init__(self, product_num: int, consumer_num: int, loop: NonContextualLoop):
         self.name = "SingleOptimal"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
         self.lmbd = loop.true_lambda
         self.q = loop.true_qt
@@ -46,10 +46,10 @@ class SingleOptimal:
 
 
 class KeepOptimal:
-    def __init__(self, product_num: int, customer_num: int, loop: NonContextualLoop):
+    def __init__(self, product_num: int, consumer_num: int, loop: NonContextualLoop):
         self.name = "KeepOptimal"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
         self.lmbd = loop.true_lambda
         self.q = loop.true_qt
@@ -68,7 +68,7 @@ class Ours:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: NonContextualLoop,
         xiq: float,
         xiw: float,
@@ -76,7 +76,7 @@ class Ours:
     ):
         self.name = "Ours"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
         self.xiq = xiq
         self.xiw = xiw
@@ -146,14 +146,14 @@ class SinglePurchase:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: NonContextualLoop,
         xiq: float,
         xilmbd: float,
     ):
         self.name = "SinglePurchase"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
 
         self.browse_not_pur_num = 0
@@ -205,14 +205,14 @@ class KeepViewing:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: NonContextualLoop,
         xiq: float,
         xilmbd: float,
     ):
         self.name = "KeepViewing"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
         self.xiq = xiq
         self.xilmbd = xilmbd
@@ -264,16 +264,16 @@ class KeepViewing:
 
 class ExploreThenExploitA:
     def __init__(
-        self, product_num: int, customer_num: int, loop: NonContextualLoop, delta: float
+        self, product_num: int, consumer_num: int, loop: NonContextualLoop, delta: float
     ):
         self.name = "ExploreThenExploitA"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.delta = delta
 
         self.r = loop.reward
 
-        self.lower_count = int(self.delta * np.log(self.customer_num))
+        self.lower_count = int(self.delta * np.log(self.consumer_num))
 
         self.purchase_num = 0
         self.browse_not_pur_num = 0
@@ -321,16 +321,16 @@ class ExploreThenExploitA:
 
 class ExploreThenExploitB:
     def __init__(
-        self, product_num: int, customer_num: int, loop: NonContextualLoop, delta: float
+        self, product_num: int, consumer_num: int, loop: NonContextualLoop, delta: float
     ):
         self.name = "ExploreThenExploitB"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.delta = delta
 
         self.r = loop.reward
 
-        self.lower_count = int(self.delta * np.log(self.customer_num))
+        self.lower_count = int(self.delta * np.log(self.consumer_num))
 
         self.purchase_num = 0
         self.browse_not_pur_num = 0

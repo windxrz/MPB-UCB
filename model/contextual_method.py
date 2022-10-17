@@ -11,19 +11,19 @@ def rank_products(lmbd, r, q, s):
 
 
 class Optimal:
-    def __init__(self, product_num: int, customer_num: int, loop: ContextualLoop):
+    def __init__(self, product_num: int, consumer_num: int, loop: ContextualLoop):
         self.name = "Optimal"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
 
         self.lmbd_product = loop.lambda_product
-        self.lmbd_customer = loop.lambda_customer
+        self.lmbd_consumer = loop.lambda_consumer
         self.qs = loop.qs
         self.ss = loop.ss
 
     def policy(self, t):
-        lmbd = self.lmbd_customer[t] + self.lmbd_product
+        lmbd = self.lmbd_consumer[t] + self.lmbd_product
         q = self.qs[t]
         s = self.ss[t]
         ans = rank_products(lmbd, self.reward, q, s)
@@ -34,19 +34,19 @@ class Optimal:
 
 
 class SingleOptimal:
-    def __init__(self, product_num: int, customer_num: int, loop: ContextualLoop):
+    def __init__(self, product_num: int, consumer_num: int, loop: ContextualLoop):
         self.name = "SingleOptimal"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
 
         self.lmbd_product = loop.lambda_product
-        self.lmbd_customer = loop.lambda_customer
+        self.lmbd_consumer = loop.lambda_consumer
         self.qs = loop.qs
         self.ss = loop.ss
 
     def policy(self, t):
-        lmbd = self.lmbd_customer[t] + self.lmbd_product
+        lmbd = self.lmbd_consumer[t] + self.lmbd_product
         q = self.qs[t]
         s = self.ss[t]
         tmp = self.reward * lmbd / (1 - q + q * lmbd)
@@ -58,19 +58,19 @@ class SingleOptimal:
 
 
 class KeepOptimal:
-    def __init__(self, product_num: int, customer_num: int, loop: ContextualLoop):
+    def __init__(self, product_num: int, consumer_num: int, loop: ContextualLoop):
         self.name = "KeepOptimal"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.reward = loop.reward
 
         self.lmbd_product = loop.lambda_product
-        self.lmbd_customer = loop.lambda_customer
+        self.lmbd_consumer = loop.lambda_consumer
         self.qs = loop.qs
         self.ss = loop.ss
 
     def policy(self, t):
-        lmbd = self.lmbd_customer[t] + self.lmbd_product
+        lmbd = self.lmbd_consumer[t] + self.lmbd_product
         q = self.qs[t]
         s = self.ss[t]
         tmp = self.reward * lmbd / (1 - q - (1 - q) * lmbd + 1e-5)
@@ -85,7 +85,7 @@ class Ours:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: ContextualLoop,
         alpha: float,
         xiq: float,
@@ -95,11 +95,11 @@ class Ours:
         self.name = "Ours"
         self.device = loop.device
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.product_feat = loop.product_feat
-        self.customer_feat = loop.customer_feat
+        self.consumer_feat = loop.consumer_feat
         self.reward = loop.reward
-        self.dim_customer = loop.dim_customer
+        self.dim_consumer = loop.dim_consumer
         self.dim_prod = loop.dim_prod
 
         self.alpha = alpha
@@ -107,23 +107,23 @@ class Ours:
         self.xiw = xiw
         self.xilmbd = xilmbd
 
-        self.sigma_lmbd = self.alpha * torch.eye(self.dim_customer + self.dim_prod).to(
+        self.sigma_lmbd = self.alpha * torch.eye(self.dim_consumer + self.dim_prod).to(
             self.device
         )
-        self.rho_lmbd = torch.zeros(self.dim_customer + self.dim_prod).to(self.device)
-        self.sigma_q = self.alpha * torch.eye(self.dim_customer).to(self.device)
-        self.rho_q = torch.zeros(self.dim_customer).to(self.device)
+        self.rho_lmbd = torch.zeros(self.dim_consumer + self.dim_prod).to(self.device)
+        self.sigma_q = self.alpha * torch.eye(self.dim_consumer).to(self.device)
+        self.rho_q = torch.zeros(self.dim_consumer).to(self.device)
         self.sigma_w = (
-            self.alpha * 10 * torch.eye(self.dim_customer ** 2).to(self.device)
+            self.alpha * 10 * torch.eye(self.dim_consumer ** 2).to(self.device)
         )
-        self.rho_w = torch.zeros(self.dim_customer ** 2).to(self.device)
+        self.rho_w = torch.zeros(self.dim_consumer ** 2).to(self.device)
 
         self.qs = loop.qs
         self.ss = loop.ss
         self.true_beta_q = loop.beta_q
         self.true_beta_s = loop.beta_s
         self.true_beta_lmbd = torch.cat(
-            [loop.beta_lambda_customer, loop.beta_lambda_product], dim=0
+            [loop.beta_lambda_consumer, loop.beta_lambda_product], dim=0
         )
 
     def tau(self, t, m, alpha):
@@ -138,12 +138,12 @@ class Ours:
         beta_lmbd = torch.matmul(inv_lmbd, self.rho_lmbd)
         beta_q = torch.matmul(inv_q, self.rho_q)
         beta_w = torch.matmul(inv_w, self.rho_w)
-        tau_lmbd = self.tau(t + 1, self.dim_customer + self.dim_prod, self.alpha)
-        tau_q = self.tau(t + 1, self.dim_customer, self.alpha)
-        tau_w = self.tau(t + 1, self.dim_customer ** 2, self.alpha)
+        tau_lmbd = self.tau(t + 1, self.dim_consumer + self.dim_prod, self.alpha)
+        tau_q = self.tau(t + 1, self.dim_consumer, self.alpha)
+        tau_w = self.tau(t + 1, self.dim_consumer ** 2, self.alpha)
 
-        q_feat = self.customer_feat[t]
-        w_feat = self.customer_feat[t]
+        q_feat = self.consumer_feat[t]
+        w_feat = self.consumer_feat[t]
         w_feat = torch.matmul(w_feat.view(-1, 1), w_feat.view(1, -1)).view(-1)
 
         q = (
@@ -172,7 +172,7 @@ class Ours:
 
         lmbd_feat = torch.cat(
             [
-                self.customer_feat[t]
+                self.consumer_feat[t]
                 .view(-1, self.dim_prod)
                 .expand(self.product_num, -1),
                 self.product_feat,
@@ -193,19 +193,19 @@ class Ours:
             k = browser_list[i]
             p = purchase_list[i]
             cust_prod_feat = torch.cat(
-                [self.customer_feat[t], self.product_feat[k]], dim=0
+                [self.consumer_feat[t], self.product_feat[k]], dim=0
             )
             tmp = torch.matmul(cust_prod_feat.view(-1, 1), cust_prod_feat.view(1, -1))
             self.sigma_lmbd += tmp
             self.rho_lmbd += cust_prod_feat * p
             if p == 0:
-                cust_feat = self.customer_feat[t]
+                cust_feat = self.consumer_feat[t]
                 self.sigma_q += torch.matmul(
                     cust_feat.view(-1, 1), cust_feat.view(1, -1)
                 )
                 self.rho_q += (i < len(browser_list) - 1) * cust_feat
             else:
-                feat = self.customer_feat[t]
+                feat = self.consumer_feat[t]
                 feat = torch.matmul(feat.view(-1, 1), feat.view(1, -1)).view(-1)
                 self.sigma_w += torch.matmul(feat.view(-1, 1), feat.view(1, -1))
                 self.rho_w += (i < len(browser_list) - 1) * feat
@@ -215,7 +215,7 @@ class SinglePurchase:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: ContextualLoop,
         alpha: float,
         xiq: float,
@@ -223,11 +223,11 @@ class SinglePurchase:
     ):
         self.name = "SinglePurchase"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.product_feat = loop.product_feat
-        self.customer_feat = loop.customer_feat
+        self.consumer_feat = loop.consumer_feat
         self.reward = loop.reward
-        self.dim_customer = loop.dim_customer
+        self.dim_consumer = loop.dim_consumer
         self.dim_prod = loop.dim_prod
         self.device = loop.device
 
@@ -235,12 +235,12 @@ class SinglePurchase:
         self.xiq = xiq
         self.xilmbd = xilmbd
 
-        self.sigma_lmbd = self.alpha * torch.eye(self.dim_customer + self.dim_prod).to(
+        self.sigma_lmbd = self.alpha * torch.eye(self.dim_consumer + self.dim_prod).to(
             self.device
         )
-        self.rho_lmbd = torch.zeros(self.dim_customer + self.dim_prod).to(self.device)
-        self.sigma_q = self.alpha * torch.eye(self.dim_customer).to(self.device)
-        self.rho_q = torch.zeros(self.dim_customer).to(self.device)
+        self.rho_lmbd = torch.zeros(self.dim_consumer + self.dim_prod).to(self.device)
+        self.sigma_q = self.alpha * torch.eye(self.dim_consumer).to(self.device)
+        self.rho_q = torch.zeros(self.dim_consumer).to(self.device)
 
         self.qs = loop.qs
         self.ss = loop.ss
@@ -255,10 +255,10 @@ class SinglePurchase:
         inv_q = torch.linalg.inv(self.sigma_q)
         beta_lmbd = torch.matmul(inv_lmbd, self.rho_lmbd)
         beta_q = torch.matmul(inv_q, self.rho_q)
-        tau_lmbd = self.tau(t + 1, self.dim_customer + self.dim_prod, self.alpha)
-        tau_q = self.tau(t + 1, self.dim_customer, self.alpha)
+        tau_lmbd = self.tau(t + 1, self.dim_consumer + self.dim_prod, self.alpha)
+        tau_q = self.tau(t + 1, self.dim_consumer, self.alpha)
 
-        q_feat = self.customer_feat[t]
+        q_feat = self.consumer_feat[t]
 
         q = (
             torch.matmul(beta_q, q_feat)
@@ -274,7 +274,7 @@ class SinglePurchase:
 
         lmbd_feat = torch.cat(
             [
-                self.customer_feat[t]
+                self.consumer_feat[t]
                 .view(-1, self.dim_prod)
                 .expand(self.product_num, -1),
                 self.product_feat,
@@ -294,13 +294,13 @@ class SinglePurchase:
             k = browser_list[i]
             p = purchase_list[i]
             cust_prod_feat = torch.cat(
-                [self.customer_feat[t], self.product_feat[k]], dim=0
+                [self.consumer_feat[t], self.product_feat[k]], dim=0
             )
             tmp = torch.matmul(cust_prod_feat.view(-1, 1), cust_prod_feat.view(1, -1))
             self.sigma_lmbd += tmp
             self.rho_lmbd += cust_prod_feat * p
             if p == 0:
-                cust_feat = self.customer_feat[t]
+                cust_feat = self.consumer_feat[t]
                 self.sigma_q += torch.matmul(
                     cust_feat.view(-1, 1), cust_feat.view(1, -1)
                 )
@@ -311,7 +311,7 @@ class KeepViewing:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: ContextualLoop,
         alpha: float,
         xiq: float,
@@ -319,11 +319,11 @@ class KeepViewing:
     ):
         self.name = "KeepViewing"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.product_feat = loop.product_feat
-        self.customer_feat = loop.customer_feat
+        self.consumer_feat = loop.consumer_feat
         self.reward = loop.reward
-        self.dim_customer = loop.dim_customer
+        self.dim_consumer = loop.dim_consumer
         self.dim_prod = loop.dim_prod
         self.device = loop.device
 
@@ -331,19 +331,19 @@ class KeepViewing:
         self.xiq = xiq
         self.xilmbd = xilmbd
 
-        self.sigma_lmbd = self.alpha * torch.eye(self.dim_customer + self.dim_prod).to(
+        self.sigma_lmbd = self.alpha * torch.eye(self.dim_consumer + self.dim_prod).to(
             self.device
         )
-        self.rho_lmbd = torch.zeros(self.dim_customer + self.dim_prod).to(self.device)
-        self.sigma_q = self.alpha * torch.eye(self.dim_customer).to(self.device)
-        self.rho_q = torch.zeros(self.dim_customer).to(self.device)
+        self.rho_lmbd = torch.zeros(self.dim_consumer + self.dim_prod).to(self.device)
+        self.sigma_q = self.alpha * torch.eye(self.dim_consumer).to(self.device)
+        self.rho_q = torch.zeros(self.dim_consumer).to(self.device)
 
         self.qs = loop.qs
         self.ss = loop.ss
         self.true_beta_q = loop.beta_q
         self.true_beta_s = loop.beta_s
         self.true_beta_lmbd = torch.cat(
-            [loop.beta_lambda_customer, loop.beta_lambda_product], dim=0
+            [loop.beta_lambda_consumer, loop.beta_lambda_product], dim=0
         )
 
     def tau(self, t, m, alpha):
@@ -356,10 +356,10 @@ class KeepViewing:
         inv_q = torch.linalg.inv(self.sigma_q)
         beta_lmbd = torch.matmul(inv_lmbd, self.rho_lmbd)
         beta_q = torch.matmul(inv_q, self.rho_q)
-        tau_lmbd = self.tau(t + 1, self.dim_customer + self.dim_prod, self.alpha)
-        tau_q = self.tau(t + 1, self.dim_customer, self.alpha)
+        tau_lmbd = self.tau(t + 1, self.dim_consumer + self.dim_prod, self.alpha)
+        tau_q = self.tau(t + 1, self.dim_consumer, self.alpha)
 
-        q_feat = self.customer_feat[t]
+        q_feat = self.consumer_feat[t]
 
         q = (
             torch.matmul(beta_q, q_feat)
@@ -375,7 +375,7 @@ class KeepViewing:
 
         lmbd_feat = torch.cat(
             [
-                self.customer_feat[t]
+                self.consumer_feat[t]
                 .view(-1, self.dim_prod)
                 .expand(self.product_num, -1),
                 self.product_feat,
@@ -395,13 +395,13 @@ class KeepViewing:
             k = browser_list[i]
             p = purchase_list[i]
             cust_prod_feat = torch.cat(
-                [self.customer_feat[t], self.product_feat[k]], dim=0
+                [self.consumer_feat[t], self.product_feat[k]], dim=0
             )
             tmp = torch.matmul(cust_prod_feat.view(-1, 1), cust_prod_feat.view(1, -1))
             self.sigma_lmbd += tmp
             self.rho_lmbd += cust_prod_feat * p
             if p == 0:
-                cust_feat = self.customer_feat[t]
+                cust_feat = self.consumer_feat[t]
                 self.sigma_q += torch.matmul(
                     cust_feat.view(-1, 1), cust_feat.view(1, -1)
                 )
@@ -414,35 +414,35 @@ class ExploreThenExploitA:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: ContextualLoop,
         alpha: float,
         delta: float,
     ):
         self.name = "ExploreThenExploitA"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.product_feat = loop.product_feat
-        self.customer_feat = loop.customer_feat
+        self.consumer_feat = loop.consumer_feat
         self.reward = loop.reward
         self.alpha = alpha
-        self.dim_customer = loop.dim_customer
+        self.dim_consumer = loop.dim_consumer
         self.device = loop.device
 
         self.dim_prod = loop.dim_prod
         self.delta = delta
-        self.lower_count = int(self.delta * np.log(self.customer_num))
+        self.lower_count = int(self.delta * np.log(self.consumer_num))
 
-        self.sigma_lmbd = self.alpha * torch.eye(self.dim_customer + self.dim_prod).to(
+        self.sigma_lmbd = self.alpha * torch.eye(self.dim_consumer + self.dim_prod).to(
             self.device
         )
-        self.rho_lmbd = torch.zeros(self.dim_customer + self.dim_prod).to(self.device)
-        self.sigma_q = self.alpha * torch.eye(self.dim_customer).to(self.device)
-        self.rho_q = torch.zeros(self.dim_customer).to(self.device)
+        self.rho_lmbd = torch.zeros(self.dim_consumer + self.dim_prod).to(self.device)
+        self.sigma_q = self.alpha * torch.eye(self.dim_consumer).to(self.device)
+        self.rho_q = torch.zeros(self.dim_consumer).to(self.device)
         self.sigma_w = (
-            self.alpha * 10 * torch.eye(self.dim_customer ** 2).to(self.device)
+            self.alpha * 10 * torch.eye(self.dim_consumer ** 2).to(self.device)
         )
-        self.rho_w = torch.zeros(self.dim_customer ** 2).to(self.device)
+        self.rho_w = torch.zeros(self.dim_consumer ** 2).to(self.device)
 
         self.browse_count_list = torch.zeros(product_num, dtype=torch.int)
 
@@ -451,7 +451,7 @@ class ExploreThenExploitA:
         self.true_beta_q = loop.beta_q
         self.true_beta_s = loop.beta_s
         self.true_beta_lmbd = torch.cat(
-            [loop.beta_lambda_customer, loop.beta_lambda_product], dim=0
+            [loop.beta_lambda_consumer, loop.beta_lambda_product], dim=0
         )
 
     def tau(self, t, m, alpha):
@@ -469,8 +469,8 @@ class ExploreThenExploitA:
             beta_q = torch.matmul(inv_q, self.rho_q)
             beta_w = torch.matmul(inv_w, self.rho_w)
 
-            q_feat = self.customer_feat[t]
-            w_feat = self.customer_feat[t]
+            q_feat = self.consumer_feat[t]
+            w_feat = self.consumer_feat[t]
             w_feat = torch.matmul(w_feat.view(-1, 1), w_feat.view(1, -1)).view(-1)
 
             q = torch.matmul(beta_q, q_feat)
@@ -482,7 +482,7 @@ class ExploreThenExploitA:
             r = self.reward
             lmbd_feat = torch.cat(
                 [
-                    self.customer_feat[t]
+                    self.consumer_feat[t]
                     .view(-1, self.dim_prod)
                     .expand(self.product_num, -1),
                     self.product_feat,
@@ -506,19 +506,19 @@ class ExploreThenExploitA:
             self.browse_count_list[k] += 1
             p = purchase_list[i]
             cust_prod_feat = torch.cat(
-                [self.customer_feat[t], self.product_feat[k]], dim=0
+                [self.consumer_feat[t], self.product_feat[k]], dim=0
             )
             tmp = torch.matmul(cust_prod_feat.view(-1, 1), cust_prod_feat.view(1, -1))
             self.sigma_lmbd += tmp
             self.rho_lmbd += cust_prod_feat * p
             if p == 0:
-                cust_feat = self.customer_feat[t]
+                cust_feat = self.consumer_feat[t]
                 self.sigma_q += torch.matmul(
                     cust_feat.view(-1, 1), cust_feat.view(1, -1)
                 )
                 self.rho_q += (i < len(browser_list) - 1) * cust_feat
             else:
-                feat = self.customer_feat[t]
+                feat = self.consumer_feat[t]
                 feat = torch.matmul(feat.view(-1, 1), feat.view(1, -1)).view(-1)
                 self.sigma_w += torch.matmul(feat.view(-1, 1), feat.view(1, -1))
                 self.rho_w += (i < len(browser_list) - 1) * feat
@@ -528,34 +528,34 @@ class ExploreThenExploitB:
     def __init__(
         self,
         product_num: int,
-        customer_num: int,
+        consumer_num: int,
         loop: ContextualLoop,
         alpha: float,
         delta: float,
     ):
         self.name = "ExploreThenExploitB"
         self.product_num = product_num
-        self.customer_num = customer_num
+        self.consumer_num = consumer_num
         self.product_feat = loop.product_feat
-        self.customer_feat = loop.customer_feat
+        self.consumer_feat = loop.consumer_feat
         self.reward = loop.reward
         self.alpha = alpha
-        self.dim_customer = loop.dim_customer
+        self.dim_consumer = loop.dim_consumer
         self.dim_prod = loop.dim_prod
         self.delta = delta
-        self.lower_count = int(self.delta * np.log(self.customer_num))
+        self.lower_count = int(self.delta * np.log(self.consumer_num))
         self.device = loop.device
 
-        self.sigma_lmbd = self.alpha * torch.eye(self.dim_customer + self.dim_prod).to(
+        self.sigma_lmbd = self.alpha * torch.eye(self.dim_consumer + self.dim_prod).to(
             self.device
         )
-        self.rho_lmbd = torch.zeros(self.dim_customer + self.dim_prod).to(self.device)
-        self.sigma_q = self.alpha * torch.eye(self.dim_customer).to(self.device)
-        self.rho_q = torch.zeros(self.dim_customer).to(self.device)
+        self.rho_lmbd = torch.zeros(self.dim_consumer + self.dim_prod).to(self.device)
+        self.sigma_q = self.alpha * torch.eye(self.dim_consumer).to(self.device)
+        self.rho_q = torch.zeros(self.dim_consumer).to(self.device)
         self.sigma_w = (
-            self.alpha * 10 * torch.eye(self.dim_customer ** 2).to(self.device)
+            self.alpha * 10 * torch.eye(self.dim_consumer ** 2).to(self.device)
         )
-        self.rho_w = torch.zeros(self.dim_customer ** 2).to(self.device)
+        self.rho_w = torch.zeros(self.dim_consumer ** 2).to(self.device)
 
         self.browse_count_list = torch.zeros(product_num)
 
@@ -564,7 +564,7 @@ class ExploreThenExploitB:
         self.true_beta_q = loop.beta_q
         self.true_beta_s = loop.beta_s
         self.true_beta_lmbd = torch.cat(
-            [loop.beta_lambda_customer, loop.beta_lambda_product], dim=0
+            [loop.beta_lambda_consumer, loop.beta_lambda_product], dim=0
         )
 
     def tau(self, t, m, alpha):
@@ -580,8 +580,8 @@ class ExploreThenExploitB:
         beta_q = torch.matmul(inv_q, self.rho_q)
         beta_w = torch.matmul(inv_w, self.rho_w)
 
-        q_feat = self.customer_feat[t]
-        w_feat = self.customer_feat[t]
+        q_feat = self.consumer_feat[t]
+        w_feat = self.consumer_feat[t]
         w_feat = torch.matmul(w_feat.view(-1, 1), w_feat.view(1, -1)).view(-1)
 
         q = torch.matmul(beta_q, q_feat)
@@ -594,7 +594,7 @@ class ExploreThenExploitB:
 
         lmbd_feat = torch.cat(
             [
-                self.customer_feat[t]
+                self.consumer_feat[t]
                 .view(-1, self.dim_prod)
                 .expand(self.product_num, -1),
                 self.product_feat,
@@ -624,19 +624,19 @@ class ExploreThenExploitB:
             self.browse_count_list[k] += 1
             p = purchase_list[i]
             cust_prod_feat = torch.cat(
-                [self.customer_feat[t], self.product_feat[k]], dim=0
+                [self.consumer_feat[t], self.product_feat[k]], dim=0
             )
             tmp = torch.matmul(cust_prod_feat.view(-1, 1), cust_prod_feat.view(1, -1))
             self.sigma_lmbd += tmp
             self.rho_lmbd += cust_prod_feat * p
             if p == 0:
-                cust_feat = self.customer_feat[t]
+                cust_feat = self.consumer_feat[t]
                 self.sigma_q += torch.matmul(
                     cust_feat.view(-1, 1), cust_feat.view(1, -1)
                 )
                 self.rho_q += (i < len(browser_list) - 1) * cust_feat
             else:
-                feat = self.customer_feat[t]
+                feat = self.consumer_feat[t]
                 feat = torch.matmul(feat.view(-1, 1), feat.view(1, -1)).view(-1)
                 self.sigma_w += torch.matmul(feat.view(-1, 1), feat.view(1, -1))
                 self.rho_w += (i < len(browser_list) - 1) * feat
