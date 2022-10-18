@@ -1,5 +1,5 @@
 # MPB-UCB
-Source code for NeurIPS 2022 paper Product Ranking for Revenue Maximization with Multiple Purchases.
+Source code for NeurIPS 2022 paper [Product Ranking for Revenue Maximization with Multiple Purchases](https://arxiv.org/abs/2210.08268).
 
 In this paper, we propose a more realistic consumer choice model to characterize consumer behaviors under multiple-purchase settings. We further develop the Multiple-Purchase-with-Budget UCB (MPB-UCB) algorithms with $\tilde{O}(\sqrt{T})$ regret that estimate consumers' behaviors and maximize revenue simultaneously in online settings.
 
